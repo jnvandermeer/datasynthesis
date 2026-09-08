@@ -35,7 +35,7 @@ The python module needs all of this to know where the participant numbers, sessi
 ```python
 import datasynthesis
 
-ds = DataSynthesis(seed=1)
+ds = datasynthesis.DataSynthesis(seed=1)
 
 ds.load('6_Physiological/2_V02/3_heat_physiology_thermoregulation_hr.csv',
         participantid='participant_id',

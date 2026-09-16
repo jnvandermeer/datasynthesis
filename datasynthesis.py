@@ -123,7 +123,7 @@ class DataSynthesis(object):
                     print('There seems to be a NA in the period/session; I will tread NA as session "NA"')
             
             type_and_unit = df[[self.params.type, self.params.unit]].drop_duplicates().values.tolist()
-            print('There are the following variables and units:')
+            print(f'There are {len(type_and_unit)} different kinds of variables/units:')
             for t, u in type_and_unit:
                 print(f'\t{t} -- in units: {u}')
     
@@ -252,16 +252,96 @@ class DataSynthesis(object):
     
                 # we use the same seed so each participant will have same type of randomization
                 old_participant = p
-                my_number = int(re.search(r'\d+', old_participant).group())
-                new_participant_number = new_p_list[my_number-1]
-                new_participant_list.append(new_participant_number)
 
-            my_mat = []
-            my_col_names = []
-            my_text_mat = []
+                # look i'ts not very 'good' typecasting. Bad, even. But, it should work:
+                if type(old_participant) is str:
+                    my_number = int(re.search(r'\d+', old_participant).group())
+                else: 
+                    my_number = int(old_participant)
+
+                # set_trace(port=4444, term_size=(140, 50))        
+                try:
+                    new_participant_number = new_p_list[my_number-1]
+                    new_participant_list.append(new_participant_number)
+                except:
+                    set_trace(port=4444, term_size=(140, 50))
+            
+
+            # I may have to do this one-by-one...
+            # so we circumbent multiple timepoints PER SUBJECT that IS NOT TIME
+            # we want to end up with 1 matrix of participant-by-measurements (however how much)
+
+            # let's prepare -- HOW MANY measurements, for each type of variable??
+            # set_trace(port=4444, term_size=(140, 50))
+            # my_maxes = np.zeros((len(sessions), len(type_and_unit)))
+            # for j, s in enumerate(sessions):
+            #     for k, (t, u) in enumerate(type_and_unit):
+            #         for i, p in enumerate(participants):
+            #             mask = ((df[self.params.type] == t)
+            #                 & (df[self.params.unit] == u)
+            #                 & (df[self.params.participantid] == p)
+            #             )
+                        
+            #             if pd.isna(s):
+            #                 mask &= df[self.params.session].isna()
+            #             else:
+            #                 mask &= df[self.params.session] == s
+
+            #             if sum(mask) > my_maxes[j, k]:
+            #                  my_maxes[j, k] = sum(mask)
+
+            counts = (
+                df.groupby([
+                    self.params.session,
+                    self.params.type,
+                    self.params.unit,
+                    self.params.participantid
+                ])
+                .size()
+            )
+            
+            my_maxes = (
+                counts
+                .groupby(level=[
+                    self.params.session,
+                    self.params.type,
+                    self.params.unit
+                ])
+                .max()
+            )
+
+            my_maxes = np.zeros((len(sessions), len(type_and_unit)))
             
             for j, s in enumerate(sessions):
                 for k, (t, u) in enumerate(type_and_unit):
+                    try:
+                        my_maxes[j, k] = counts.loc[(s, t, u)].max()
+                    except KeyError:
+                        my_maxes[j, k] = 0
+                                    
+            # set_trace(port=4444, term_size=(140, 50))
+
+            
+            
+            my_mat = []
+            my_col_names = []
+            my_text_mat = []
+
+            for i, p in enumerate(participants):
+                my_mat.append([])
+                my_text_mat.append([])
+                my_col_names.append([])
+
+            
+            for j, s in enumerate(sessions):
+                for k, (t, u) in enumerate(type_and_unit):
+
+
+                    # for i, p in enumerate(participants):
+
+                    # my_mat.append([])
+                    # my_text_mat.append([])
+                
 
                     # let's get the info over all the participants:
                     mask = ((df[self.params.type] == t)
@@ -274,6 +354,8 @@ class DataSynthesis(object):
                         mask &= df[self.params.session] == s
 
                     df_original = df.loc[mask, cols_to_select].copy()
+
+                    # set_trace(port=4444, term_size=(140, 50))
                     
                     # Only look at the actual data column
                     original_values = df_original[self.params.data].tolist()
@@ -301,13 +383,39 @@ class DataSynthesis(object):
                         original_values,
                         dtype=object
                     )[text_mask.to_numpy()]
-                    
-                    
-                    my_mat.append(numeric_array.tolist())
-                    my_text_mat.append(text_array.tolist())
-                    
-                    my_col_names.append(f'{s}{t}{u}')
 
+                    for i, p in enumerate(participants):
+
+                        participant_mask = (df_original[self.params.participantid] == p)
+
+                        current_max = int(my_maxes[j, k])
+
+                        to_add_numeric = [np.nan] * current_max
+                        to_add_text = [np.nan] * current_max
+                        to_add_my_col_names = [None] * current_max
+                    
+                        values_numeric = numeric_array[participant_mask].tolist()
+                        values_text = text_array[participant_mask].tolist()
+                    
+                        # Replace the beginning of the NaN-filled lists
+                        # with the values we actually have
+                        n = min(len(values_numeric), current_max)
+                    
+                        to_add_numeric[:n] = values_numeric[:n]
+                        to_add_text[:n] = values_text[:n]
+                        to_add_my_col_names[:n] = [f'{s}{t}{u}'] * n
+                    
+                        my_mat[i].extend(to_add_numeric)
+                        my_text_mat[i].extend(to_add_text)
+                        my_col_names[i].extend(to_add_my_col_names)
+                        
+                    # this basically contains all of the runs. Right?
+                    # and the runs are different for each particiapnt? Or not?
+                    
+                    # my_col_names.append(f'{s}{t}{u}')
+
+
+                    # set_trace(port=4444, term_size=(140, 50))
                     
                     # df_to_process = df.loc[mask, cols_to_select].copy()
                     
@@ -334,10 +442,13 @@ class DataSynthesis(object):
                     # set_trace(port=4444, term_size=(140, 50))
                     # my_col_names.append(f'{s}{t}{u}')
 
-            # set_trace(port=4444, term_size=(140, 50))
+            # what do we have?
+            
             
             # 1. Transpose input to subject-major orientation
-            m2 = np.array(my_mat).T
+            m2 = np.array(my_mat)
+
+
             
             # 2. Identify and filter subjects with excessive missing values
             try:
@@ -426,7 +537,6 @@ class DataSynthesis(object):
                     row_scaled = (row[valid_mask] - scaler.mean_[valid_mask]) / scaler.scale_[valid_mask]
                 except:
                     set_trace(port=4444, term_size=(140, 50))
-            
                 # Target features (already centered by StandardScaler)
                 y_observed = row_scaled
             
@@ -436,24 +546,28 @@ class DataSynthesis(object):
                 # Least squares solver to project available features onto PCA space
                 z_i, _, _, _ = np.linalg.lstsq(A_observed, y_observed, rcond=None)
                 X_pca_dropped[i, :] = z_i
-            
+
+            # set_trace(port=4444, term_size=(140, 50))
             # Reconstruct dropped subjects in scaled space
-            X_reconstructed_dropped_scaled = np.dot(X_pca_dropped, components_k)
+            if len(X_pca_dropped)>0:
+                X_reconstructed_dropped_scaled = np.dot(X_pca_dropped, components_k)
             
-            # Generate synthetic residuals for dropped subjects
-            simulated_residuals_dropped = rng.normal(
-                loc=0.0, scale=std_devs, size=X_reconstructed_dropped_scaled.shape
-            )
+                # Generate synthetic residuals for dropped subjects
+                simulated_residuals_dropped = rng.normal(
+                    loc=0.0, scale=std_devs, size=X_reconstructed_dropped_scaled.shape
+                )
             
-            X_synth_dropped_scaled = X_reconstructed_dropped_scaled + simulated_residuals_dropped
-            X_synth_dropped_meaningful = scaler.inverse_transform(X_synth_dropped_scaled)
+                X_synth_dropped_scaled = X_reconstructed_dropped_scaled + simulated_residuals_dropped
+                X_synth_dropped_meaningful = scaler.inverse_transform(X_synth_dropped_scaled)
             
             # --- RE-INTEGRATE ALL SUBJECTS & RESTORE FULL MATRIX SHAPE ---
             
             # Combine kept and dropped subjects back into original row order
             X_synth_meaningful_all = np.zeros((m2.shape[0], n_features))
             X_synth_meaningful_all[keep_subject, :] = X_synth_meaningful
-            X_synth_meaningful_all[~keep_subject, :] = X_synth_dropped_meaningful  # Fixed variable name
+            if len(X_pca_dropped) > 0:
+                X_synth_meaningful_all[~keep_subject, :] = X_synth_dropped_meaningful  # Fixed variable name
+
             
             # Re-insert features into original positions
             X_synth_m2 = np.full((m2.shape[0], m2.shape[1]), np.nan, dtype=object)
@@ -468,14 +582,16 @@ class DataSynthesis(object):
             # restore all of the text stuff:
             # X_synth_m2[np.
 
-            my_text = np.asarray(my_text_mat, dtype=object).T
+            
+
+            my_text = np.asarray(my_text_mat, dtype=object)
             mask = ~pd.isna(my_text)
             X_synth_m2[mask] = my_text[mask]
             
-            my_mat_synthesized = X_synth_m2.T
+            my_mat_synthesized = X_synth_m2
 
           
-            # set_trace(port=4444, term_size=(140, 50))
+            
 
             # GREAT - now the we DO HAVE all of the new values, PUT THEM IN:
             # I am sure this is not the OPTIMAL OPTIMAL way, but best to put back
@@ -485,7 +601,7 @@ class DataSynthesis(object):
             for j, s in enumerate(sessions):
                 for k, (t, u) in enumerate(type_and_unit):
 
-                    my_msg = f"Single point entires across {len(participants)} participants, sess {s}, t/u {t}/{u}"
+                    my_msg = f"Single point entries across {len(participants)} participants, sess {s}, t/u {t}/{u}"
 
                     try:
                         count+=1 # this will likely not do anything.
@@ -502,19 +618,40 @@ class DataSynthesis(object):
                             mask &= df[self.params.session] == s
                         
                         df_to_process = df.loc[mask, cols_to_select]
+
+                        # set_trace(port=4444, term_size=(140, 50))
+
+                        # which_indices = []
+                        values_to_paste = []
+                        pps_to_paste = []
+                        for i, p in enumerate(participants):
+                            this_pp_indices = [x for x, value in enumerate(my_col_names[i]) if value == f'{s}{t}{u}']
+                            values_to_paste.extend(X_synth_m2[i, this_pp_indices])
+                            pps_to_paste.extend([new_participant_list[i]]*len(this_pp_indices))
+
+                        # set_trace(port=4444, term_size=(140, 50))
+                                                  
+
+                        
+                            
+                        # [f'{s}{t}{u}'
+                        
                         # df_to_process[self.params.participantid] = new_participant_number
                         # now we should have all participants in the df_to_process. Let's run again & check:
-                        my_mat.append(df_to_process['value'].tolist())
+                        # my_mat.append(df_to_process['value'].tolist())
                         # set_trace(port=4444, term_size=(140, 50))
-                        which_col = my_col_names.index(f'{s}{t}{u}')
-                        values_to_paste = X_synth_m2[:, which_col]
+
+                        
+                        
+                        # which_col = my_col_names.index(f'{s}{t}{u}')
+                        # values_to_paste = X_synth_m2[:, which_col]
     
                         #  set_trace(port=4444, term_size=(140, 50))
     
     
                         # OK, replace the values:
                         df_to_process[self.params.data] = values_to_paste
-                        df_to_process[self.params.participantid] = new_participant_list
+                        df_to_process[self.params.participantid] = pps_to_paste
     
                         self.output.loc[df_to_process.index, df_to_process.columns] = df_to_process
                         

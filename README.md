@@ -6,6 +6,12 @@ In addition, the module already lays a small foundation to come to a consensus a
 # Synthesis procedure
 This module can load in a .csv data file, in long format, and it will read and create an identical copy of the input data sctructure. Ever cell of the output structure is filled with pandas NA. Then, the actual data file is read in, particiant ID's are randomized, and new data will be generated based on some averages of the existing data. Within the synthesized data, Within-subject variance and between-subject variance are maintained.
 
+With time-series data, we rely on a model that uses phase randomization of the original timeseries to synthesize new timeseries with similar attributes. With Single-entry data (possibly combined with categorical data), we keep the categorical data constant (as this usually has no information in it anyway), and the entries are analyzed. A PCA model is fit and we will impute/synthesize data that maintains the origoinal's session/measure covariance. - basically by putting that all into a single vector for each participant before PCA analysis.
+
+
+# Bookkeeping
+- This module works on long-format data; we also do have matrix-format data. In order to handle that, I'll write a matrix-to-long format (and back again) converter. We can then extend this functions to handle data from other sites.
+- A useful feature (see below screenshots) - is that it can output what is IN the data to begin with.
 
 # Python Requirements
 - numpy

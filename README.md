@@ -2,6 +2,28 @@
 I've made changes to the UseDataSynthesis notebook to convert a whole batch of files, and to the datasynthesis.py file to solve some issues generating data
 One of the checks which 'hung' things was how much percentage of data each subject has. If a subject has NO data whatsoever, it'll not be considered for data modeling. BUT - there is numerical and there is categorical data. Categorical data is never used, and once percentage categorical > numerical, then subject might be thrown out which should not have been. This is now fixed.
 
+Another issue is regardign debugging. I use pudb, and use remote terminal to look at code. BUT - python 3.12 and higher don't work very well. 
+Therefore, conda environments (or at least, those that need debugging) are ideally python=3.11. This is not very future-proof.
+
+
+
+# Conda
+Here some installation instructions to set up your conda environment.
+Better to use miniconda - install what you need, and not the bloaty anaconda installer
+
+```python
+conda config --add channels conda-forge
+conda create -n shield python=3.11
+conda activate shield
+   
+conda install scikit-learn matplotlib jupyterlab
+conda install numpy pandas
+conda install python-kaleido
+
+pip install pudb  # the debugger
+pip install tqdm  # the progress bar
+```
+
 
 
 # Data Synthesis

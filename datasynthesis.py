@@ -28,7 +28,7 @@ def map_to_original(v, new_v):
 
 class DataSynthesis(object):
 
-    def __init__(self, seed=1, max_participants=1000, PCAthresh=0.70):
+    def __init__(self, seed=1, max_participants=1000, PCAthresh=0.90, missing_fraction=0.5):
         self.data = None
         self.params = SimpleNamespace(
             participantid=None,
@@ -47,8 +47,11 @@ class DataSynthesis(object):
         self.max_participants = max_participants
         # the explained varaicne that we're going to reconstruct again:
         self.PCAthresh = PCAthresh
-
         # set_trace(port=4444, term_size=(140, 50))
+
+        # amount of data which is NOT there. we set this to quite high now:
+        self.MY_MISSING_FRACTION = missing_fraction
+
         
         
 
@@ -456,7 +459,9 @@ class DataSynthesis(object):
             except:
                 set_trace(port=4444, term_size=(140, 75))
                 
-            keep_subject = missing_fraction <= 0.25
+            # keep_subject = missing_fraction <= (np.median(missing_fraction) + np.std(missing_fraction))
+            # keep_subjects = missing_fraction <= (np.median(missing_fraction) + np.std(missing_fraction))
+            keep_subject = missing_fraction <= (np.median(missing_fraction) + np.std(missing_fraction))
             m3 = m2[keep_subject, :]
             
             # 3. Filter features with no variance - or featued that are NAN:
@@ -483,7 +488,13 @@ class DataSynthesis(object):
             
             # 4. Impute missing values for clean subjects
             imputer = SimpleImputer(strategy="mean")
-            X_imputed = imputer.fit_transform(X_meaningful_var)
+
+            try:
+                X_imputed = imputer.fit_transform(X_meaningful_var)
+            except:
+                set_trace(port=4444, term_size=(140, 45))
+
+            
             
             # 5. Scale features (mean=0, std=1)
             scaler = StandardScaler()
@@ -661,7 +672,7 @@ class DataSynthesis(object):
                         # set_trace(port=4444, term_size=(140, 50)); 
                     except Exception as e:
                         e = getattr(e, 'message', repr(e))
-                        set_trace(port=4444, term_size=(140, 50))
+                        # set_trace(port=4444, term_size=(140, 50))
                         logger.error(e)
                         logger.error(f'failed: {my_msg}\nerror: {e}')
                         self.errorhistory += my_msg + '\n'

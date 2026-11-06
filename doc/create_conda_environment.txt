@@ -1,0 +1,18 @@
+
+
+conda create -n shield python=3.11
+
+conda activate shield
+
+conda install scikit-learn matplotlib jupyterlab
+conda install numpy pandas
+conda install nodejs
+conda install plotly
+conda install anywidget
+conda install -c conda-forge python-kaleido
+conda install -c conda-forge ipywidgets jupyterlab_widgets
+
+pip install pudb
+pip install tqdm
+
+ 

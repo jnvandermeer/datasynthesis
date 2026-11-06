@@ -1,0 +1,1 @@
+for f in `cat all_files_to_process.txt`;do echo ln -s ../../../../$f `echo $f|sed s/\\\//#/g|sed s/..//`;done

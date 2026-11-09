@@ -68,3 +68,8 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+
+# IMAGES
+*.png
+*.jpg

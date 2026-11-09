@@ -14,8 +14,9 @@ from sklearn.preprocessing import StandardScaler
 # need the following for plotting
 import plotly.express as px
 import plotly.graph_objects as go
-from scipy.stats import gaussian_kde
+from plotly.subplots import make_subplots
 
+from scipy.stats import gaussian_kde
 
 # one of the other things to take care of ,at some point, is being able to think/plot/work with different GROUPS
 # but, most ofthe data iv'e seen are just 1 group.
@@ -359,7 +360,146 @@ class DataExplorer(DataLoader):
         print(f'saved: {my_save_fig_filename}')
 
 
+    def visualize_timeseries(self, what, invert_ses_sub=False):
+
+        df=self.dataframe
+
+
+        my_data = dict()
+        
+        for i, s in enumerate(self.sessions):
+
+            this_period = str(s)
+            my_data[this_period] = {}
+            
+
+            tf_period = my_pd_compare(df[self.params.session], s)
+            tf_what = my_pd_compare(df[self.params.type], what)
+
+            sel_df = df[(tf_period) & (tf_what)]
+
+            all_participants = set(sel_df[self.params.participantid])
+
+            for j, p in enumerate(all_participants):
+                this_df = sel_df[sel_df[self.params.participantid] == p]
+
+                x_data = this_df[self.params.time_value]
+                y_data = this_df[self.params.data]
+
+                my_data[this_period][p] = (list(x_data), list(y_data))
+
+
+        data_reversed = {}
+
+        for period, subjects in my_data.items():
+            for subject, timeseries in subjects.items():
+                data_reversed.setdefault(subject, {})[period] = timeseries
+
+        if invert_ses_sub:
+            my_data = data_reversed
+
+        # set_trace(term_size=(140, 45))
+        # we made our data -- now -- plot it!
+        unit = next(item[1] for item in self.type_and_unit if item[0] == what)
+        
+        fig = _make_timeseries(my_data, title=f'Timeseries: {what} in: {unit}',
+                     y_title=f'{what}', x_title=f'Time {df[self.params.time_unit][0]}',
+                     height_per_period=350)
+        
+        fig.show()
+
+        self.timeseries_data = my_data
+                
+            
+            
+        
+
+
+
+def my_pd_compare(series, value):
+    if pd.isna(value):
+        return series.isna()
+    return series == value
     
+
+
+
+# def _make_figure_timeseries(seltc. afterwards.
+
+def _make_timeseries(data, title='Timeseries by period',
+                     y_title='Value', x_title='Time',
+                     height_per_period=250):
+        
+    periods = list(data.keys())
+
+    # Collect all subjects
+    subjects = list(dict.fromkeys(
+        subject
+        for period in periods
+        for subject in data[period]
+    ))
+
+    # Consistent colours across all subplots
+    colors = px.colors.qualitative.Plotly
+    subject_colors = {
+        subject: colors[i % len(colors)]
+        for i, subject in enumerate(subjects)
+    }
+
+    # Create vertically stacked subplots
+    fig = make_subplots(
+        rows=len(periods),
+        cols=1,
+        shared_xaxes=True,
+        subplot_titles=periods,
+        vertical_spacing=min(0.01, 0.3 / len(periods)),
+    )
+
+    # Add timeseries
+    for row, period in enumerate(periods, start=1):
+
+        for subject, (x, y) in data[period].items():
+
+            fig.add_trace(
+                go.Scatter(
+                    x=x,
+                    y=y,
+                    mode='lines',
+                    name=subject,
+                    legendgroup=subject,
+                    showlegend=(row == 1),
+                    line=dict(
+                        color=subject_colors[subject],
+                        width=1.5,
+                    ),
+                    hovertemplate=(
+                        f'<b>{subject}</b><br>'
+                        'Time: %{x}<br>'
+                        'Value: %{y}<extra></extra>'
+                    ),
+                ),
+                row=row,
+                col=1,
+            )
+
+    # General layout
+    fig.update_layout(
+        title=title,
+        height=height_per_period * len(periods),
+        template='plotly_white',
+        hovermode='closest',
+        legend=dict(
+            title='Subject',
+            groupclick='togglegroup',
+        ),
+        margin=dict(l=70, r=30, t=80, b=60),
+    )
+
+    fig.update_yaxes(title_text=y_title)
+    fig.update_xaxes(title_text=x_title)
+
+    return fig
+
 
     
 

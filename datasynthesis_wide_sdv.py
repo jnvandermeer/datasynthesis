@@ -81,10 +81,12 @@ class DataSynthesisWideSDV:
         else:
             self.dataframe["sequence"] = ((self.dataframe[session] - 1) * 1000) + self.dataframe[trial]
 
+        # Order the columns by participantid and sequence just in case they may be out of order
+        self.dataframe = self.dataframe.sort_values(by=[participantid, "sequence"]).reset_index(drop=True)
 
 
         # Generate table metadata
-        self.metadata = Metadata.detect_from_dataframes(data={"origdata": self.dataframe})
+        self.metadata = Metadata.detect_from_dataframes(data={"data": self.dataframe})
         self.metadata.update_column(column_name=participantid, sdtype="id")
         self.metadata.update_column(column_name="sequence", sdtype="numerical")
         self.metadata.update_column(column_name=session, sdtype="categorical")  
@@ -97,7 +99,7 @@ class DataSynthesisWideSDV:
     # Learn the structure of the data
     def learn(self):
         self.synthesizer = PARSynthesizer(metadata=self.metadata, verbose=True)  # Use PARSynthesizer for sequential data, display progress bar
-        self.synthesizer.fit(data={"origdata": self.dataframe})     # Takes a dict, which is the same at what is in the metadata dict
+        self.synthesizer.fit(data={"data": self.dataframe})     # Takes a dict, which is the same at what is in the metadata dict
 
 
 
@@ -116,8 +118,9 @@ class DataSynthesisWideSDV:
         nseqs = np
         nslen = ns * nt
         
-        # Generate synthetic data
-        self.synthetic = self.synthesizer.sample_sequences(num_sequences=nseqs, sequence_length=nslen)
+        # Generate synthetic data (returns dict, need to unwrap)
+        synth_dict = self.synthesizer.sample_sequences(num_sequences=nseqs, sequence_length=nslen)
+        self.synthetic = synth_dict["data"]
 
         # Reconstruct the session and trial columns from the sequence column
         self.synthetic[self.params.session] = (self.synthetic["sequence"] - 1) // 1000 + 1

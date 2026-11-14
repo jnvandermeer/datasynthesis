@@ -34,9 +34,10 @@ class DataSynthesisDiscreteSDV:
         """ Load a wide table of discrete data and prepare it for synthetic data generation using SDV. 
             Tables should have variables as columns, samples as rows. That is, each participant-session 
             or participant-session-trial combination should be one data row. The order of rows should
-            represent the temporal sequence of data. E.g. for test session, trials should be stacked from
-            first to last. Sessions should then be stacked earliest to latest. If a session has no trials,
-            a dummy trial column will be appended to the table with default value 1. """
+            represent the temporal sequence of data. E.g. longitudinal participant-session-trial set ups,
+            like HISS, each participant has multiple sessions, each session has many trials. For a given
+            session for a participant, trials should be stacked first to last, then blocks of session rows 
+            should be stacked earliest to latest. """
 
 
         # Load the wide table

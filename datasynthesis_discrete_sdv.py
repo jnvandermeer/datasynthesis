@@ -31,7 +31,12 @@ class DataSynthesisDiscreteSDV:
 
     # Load table of discrete data and prepare it for SDV 
     def load(self, filename, participantid, session, expected_nsessions=1, trial=None, expected_ntrials=1, cols_to_drop=None, participant_regex=None):
-        """ Load a wide table of discrete data and prepare it for synthetic data generation using SDV. """
+        """ Load a wide table of discrete data and prepare it for synthetic data generation using SDV. 
+            Tables should have variables as columns, samples as rows. That is, each participant-session 
+            or participant-session-trial combination should be one data row. The order of rows should
+            represent the temporal sequence of data. E.g. for test session, trials should be stacked from
+            first to last. Sessions should then be stacked earliest to latest. If a session has no trials,
+            a dummy trial column will be appended to the table with default value 1. """
 
 
         # Load the wide table

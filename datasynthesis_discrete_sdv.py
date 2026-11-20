@@ -49,6 +49,7 @@ class DataSynthesisDiscreteSDV:
         # If not trial column specified, create a dummy one filled with 1
         if trial is None:
             self.dataframe["trial"] = 1
+            trial = "trial"
 
         # Drop any columns if required
         if cols_to_drop:
@@ -103,7 +104,7 @@ class DataSynthesisDiscreteSDV:
         dataframe_padded[cols_to_impute] = dataframe_padded.groupby([participantid, session])[cols_to_impute].transform(lambda x: x.fillna(x.mean()))
         self.dataframe = dataframe_padded.copy()    # overwrite
 
-        # Recode trials as monotonically increasing ids incase imputation overwrote them
+        # Recode trials as monotonically increasing ids in case imputation overwrote them
         self.dataframe[trial] = self.dataframe.groupby([participantid, session]).cumcount() + 1
 
 

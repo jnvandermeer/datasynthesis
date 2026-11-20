@@ -1,0 +1,38 @@
+These are some tools we need to understand:
+------------------------------------------
+
+
+Append Files
+Classification Metrics
+Describe
+Envelope
+Export CSV
+Filter Rows
+Low-pass Filter
+Floor
+Impute
+K-Means Clustering
+Linear Regression
+
+    Linear Regression Predict
+    Linear Regression Train
+
+Random Forest
+
+    Random Forest Predict
+    Random Forest Train
+
+Regression Metrics
+Remove NA
+Resample
+Scatterplot Matrix
+SHAP Explain
+Simple Join
+Summarize
+Support Vector Machine
+
+    SVM Predict
+    SVM Train
+
+Test
+Union Tables

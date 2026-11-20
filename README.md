@@ -56,6 +56,7 @@ conda install scikit-learn matplotlib jupyterlab
 conda install numpy pandas
 conda install python-kaleido # not needed for synthesis, but for our other module - data exploration and model creation
 conda install anywidget    # same
+conda install tomlkit 		# to synthesize data
 
 pip install pudb  # the debugger
 pip install tqdm  # the progress bar
